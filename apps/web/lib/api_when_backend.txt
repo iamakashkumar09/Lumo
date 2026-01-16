@@ -1,0 +1,127 @@
+// ------------------------------------------------------------------
+// COPY THIS INTO apps/web/lib/api.ts WHEN BACKEND IS READY
+// ------------------------------------------------------------------
+
+import { LoginFormValues, SignupFormValues } from './schemas';
+import { User, Post } from './types';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+// Helper to add JWT token to requests
+const getHeaders = () => {
+  const token = localStorage.getItem('token'); // Or use cookies/session
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : '',
+  };
+};
+
+export const api = {
+  auth: {
+    login: async (data: LoginFormValues) => {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Login failed');
+      const json = await res.json();
+      // Save token
+      localStorage.setItem('token', json.access_token); 
+      return json.user;
+    },
+    signup: async (data: SignupFormValues) => {
+      const res = await fetch(`${API_URL}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Signup failed');
+      const json = await res.json();
+      localStorage.setItem('token', json.access_token);
+      return json.user;
+    }
+  },
+
+  posts: {
+    getAll: async (): Promise<Post[]> => {
+      const res = await fetch(`${API_URL}/posts`, { cache: 'no-store' });
+      return res.json();
+    },
+    
+    // This connects the "Like" button
+    toggleLike: async (postId: string) => {
+      await fetch(`${API_URL}/posts/${postId}/like`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+    },
+
+    // This connects the "Comment" button
+    addComment: async (postId: string, text: string) => {
+      const res = await fetch(`${API_URL}/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ text }),
+      });
+      return res.json();
+    },
+    
+    create: async (formData: any) => {
+       // Handle file upload logic here
+    }
+  },
+
+  users: {
+    getCurrentUser: async (): Promise<User> => {
+      const res = await fetch(`${API_URL}/users/me`, {
+        headers: getHeaders(),
+      });
+      return res.json();
+    },
+    // ... other user methods
+  }
+};
+```
+
+---
+
+### Step 2: Uncomment the Logic in Components
+
+I have already written the logic in your components, but I commented out the API calls or used `setTimeout` to simulate them.
+
+**Example 1: In `apps/web/components/feed/Post.tsx`**
+
+When your backend is ready, find the `handlePostComment` function and update it:
+
+```typescript
+// BEFORE (Current Code)
+const handlePostComment = async () => {
+    // ... validation
+    setIsPosting(true);
+    
+    // Simulate Backend API Call
+    await new Promise(resolve => setTimeout(resolve, 600)); // <--- DELETE THIS LINE
+
+    const newComment = { ... }; // <--- DELETE MOCK COMMENT GENERATION
+    // ... 
+};
+
+// AFTER (Connected Code)
+const handlePostComment = async () => {
+    if (!commentText.trim()) return;
+    setIsPosting(true);
+
+    try {
+        // 1. Call the backend
+        const savedComment = await api.posts.addComment(post.id, commentText);
+        
+        // 2. Update UI with the REAL comment returned from DB
+        setComments(prev => [...prev, savedComment]); 
+        setCommentText("");
+    } catch (err) {
+        alert("Failed to post comment");
+    } finally {
+        setIsPosting(false);
+    }
+};
