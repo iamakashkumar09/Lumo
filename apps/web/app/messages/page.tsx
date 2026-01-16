@@ -140,19 +140,19 @@ export default function MessagesPage() {
             `}>
                 {selectedUser ? (
                     <>
-                        {/* Chat Header */}
-                        <div className="absolute top-0 left-0 right-0 p-3 md:p-4 z-20 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+                        {/* Chat Header - Fixed Height & Consistent Background (Fixed overlap issue) */}
+                        <div className="absolute top-0 left-0 right-0 h-16 px-4 z-20 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
                             <div className="flex items-center gap-2 overflow-hidden flex-1 mr-2">
-                                <button onClick={() => setSelectedUserId(null)} className="md:hidden p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full flex-shrink-0 -ml-1 mr-1">
+                                <button onClick={() => setSelectedUserId(null)} className="md:hidden p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full flex-shrink-0 -ml-2">
                                     <ArrowLeft size={20} className="dark:text-white"/>
                                 </button>
                                 
                                 {/* User Info Link - Takes to Profile with query param */}
-                                <Link href={`/profile?id=${selectedUser.id}`} className="flex items-center gap-3 bg-white/50 dark:bg-black/20 p-1.5 pr-4 rounded-full border border-white/20 hover:bg-white/60 dark:hover:bg-black/30 transition-colors min-w-0 max-w-full">
+                                <Link href={`/profile?id=${selectedUser.id}`} className="flex items-center gap-3 bg-white/50 dark:bg-black/20 py-1.5 px-3 rounded-full border border-white/20 hover:bg-white/60 dark:hover:bg-black/30 transition-colors min-w-0 max-w-full">
                                     <Avatar src={selectedUser.avatar} size="sm" isOnline={selectedUser.status === 'online'} />
                                     <div className="min-w-0 flex-1 flex flex-col justify-center">
-                                        <h3 className="font-bold text-sm dark:text-white truncate pr-1">{selectedUser.name}</h3>
-                                        <p className="text-[10px] text-green-500 font-bold uppercase tracking-wider truncate">Online</p>
+                                        <h3 className="font-bold text-sm dark:text-white truncate">{selectedUser.name}</h3>
+                                        <p className="text-[10px] text-green-500 font-bold uppercase tracking-wider truncate leading-none">Online</p>
                                     </div>
                                 </Link>
                             </div>
@@ -163,34 +163,39 @@ export default function MessagesPage() {
                             </div>
                         </div>
 
-                        {/* Messages List */}
-                        <div className="flex-1 overflow-y-auto pt-20 pb-4 px-4 scrollbar-hide flex flex-col gap-3" ref={chatContainerRef}>
-                            <div className="mt-auto"></div> {/* Spacer to push messages down */}
-                            {activeMessages.map((msg, idx) => (
-                                <div key={idx} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2`}>
-                                    <div className={`max-w-[75%] p-3 px-4 text-sm rounded-2xl shadow-sm ${msg.sender === 'me' ? 'bg-black dark:bg-white text-white dark:text-black rounded-tr-sm' : 'bg-white dark:bg-neutral-800 text-black dark:text-white rounded-tl-sm'}`}>
-                                        {msg.text}
+                        {/* Flex Container for Messages + Input */}
+                        <div className="flex flex-col h-full pt-16 bg-[#FAFAFA] dark:bg-neutral-950 md:bg-transparent"> 
+                            {/* Messages List - Grows to fill space */}
+                            <div className="flex-1 overflow-y-auto px-4 scrollbar-hide flex flex-col gap-3 pb-2" ref={chatContainerRef}>
+                                {/* Spacer at top so messages don't start under header immediately */}
+                                <div className="pt-4"></div> 
+                                
+                                {activeMessages.map((msg, idx) => (
+                                    <div key={idx} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2`}>
+                                        <div className={`max-w-[75%] p-3 px-4 text-sm rounded-2xl shadow-sm ${msg.sender === 'me' ? 'bg-black dark:bg-white text-white dark:text-black rounded-tr-sm' : 'bg-white dark:bg-neutral-800 text-black dark:text-white rounded-tl-sm'}`}>
+                                            {msg.text}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
 
-                        {/* Input Area */}
-                        <div className="p-4 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-t border-neutral-100 dark:border-neutral-800 md:bg-transparent md:border-none">
-                            <div className="flex items-end gap-2 bg-white dark:bg-neutral-800 rounded-[26px] p-1.5 pr-2 shadow-xl border border-neutral-100 dark:border-neutral-700">
-                                <button className="p-2.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 transition-colors">
-                                    <PlusSquare size={20} />
-                                </button>
-                                <input 
-                                    value={inputText} 
-                                    onChange={(e) => setInputText(e.target.value)} 
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(inputText)} 
-                                    placeholder="Message..." 
-                                    className="flex-1 bg-transparent outline-none py-2.5 text-sm dark:text-white max-h-32 resize-none"
-                                />
-                                <button onClick={() => handleSendMessage(inputText)} className="p-2.5 bg-black dark:bg-white text-white dark:text-black rounded-full hover:scale-105 transition-transform shadow-lg">
-                                    <Send size={18} className="ml-0.5" />
-                                </button>
+                            {/* Input Area - Increased padding for mobile visibility */}
+                            <div className="flex-shrink-0 p-3 pb-24 md:pb-3 bg-white dark:bg-neutral-950 border-t border-neutral-100 dark:border-neutral-800 z-30">
+                                <div className="flex items-end gap-2 bg-neutral-100 dark:bg-neutral-900 rounded-[26px] p-1.5 pr-2 border border-transparent focus-within:border-neutral-300 dark:focus-within:border-neutral-700 transition-colors">
+                                    <button className="p-2.5 rounded-full hover:bg-white dark:hover:bg-neutral-800 text-neutral-500 transition-colors">
+                                        <PlusSquare size={20} />
+                                    </button>
+                                    <input 
+                                        value={inputText} 
+                                        onChange={(e) => setInputText(e.target.value)} 
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(inputText)} 
+                                        placeholder="Message..." 
+                                        className="flex-1 bg-transparent outline-none py-2.5 text-sm text-black dark:text-white max-h-32 resize-none placeholder:text-neutral-500"
+                                    />
+                                    <button onClick={() => handleSendMessage(inputText)} className="p-2.5 bg-black dark:bg-white text-white dark:text-black rounded-full hover:scale-105 transition-transform shadow-sm">
+                                        <Send size={18} className="ml-0.5" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </>
@@ -206,4 +211,4 @@ export default function MessagesPage() {
             </div>
         </div>
     );
-}   
+}
