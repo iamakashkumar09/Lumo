@@ -14,14 +14,21 @@ export default function SignupPage() {
     resolver: zodResolver(SignupSchema),
   });
 
-  const onSubmit = async (data: SignupFormValues) => {
-    try {
-      await api.auth.signup(data);
-      router.push('/'); 
-    } catch (error) {
-      console.error(error);
-    }
-  };
+ const onSubmit = async (values: SignupFormValues) => {
+  try {
+    // 1. Destructure to remove confirmPassword
+    // 'rest' will now contain only: name, username, email, password
+    const { confirmPassword, ...dataToSubmit } = values;
+
+    // 2. Send only the clean data to your NestJS backend
+    await api.auth.signup(dataToSubmit);
+    
+    router.push('/login'); 
+  } catch (error) {
+    console.error("Signup failed:", error);
+    // Optional: Add a toast or alert here to show the error to the user
+  }
+};
 
   return (
     <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/20 dark:border-neutral-800 rounded-[32px] p-8 shadow-2xl">

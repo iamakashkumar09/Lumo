@@ -17,7 +17,7 @@ export default function Sidebar() {
     const Component = href ? Link : 'button';
     
     return (
-      <Component href={href || ''} onClick={onClick} className="block w-full">
+      <Component href={href || undefined} onClick={onClick} className="block w-full">
         <div className={`relative flex items-center gap-4 p-3 xl:px-5 rounded-[20px] transition-all duration-300 group ${isActive ? 'bg-neutral-900 dark:bg-white text-white dark:text-black shadow-lg' : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-900/50 dark:hover:text-white'}`}>
             <Icon size={26} strokeWidth={isActive ? 2.5 : 2} className="relative z-10 flex-shrink-0" />
             <span className={`text-base font-bold hidden xl:block ${isActive ? '' : 'font-medium'}`}>

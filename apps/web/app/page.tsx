@@ -51,10 +51,12 @@ export default function HomePage() {
             <div key={i} className="w-full aspect-[4/5] bg-neutral-200 dark:bg-neutral-900 rounded-[32px] animate-pulse" />
           ))
         ) : (
-          posts.map((post) => {
+          Array.isArray(posts) ? posts.map((post) => {
              const user = MOCK_USERS.find(u => u.id === post.userId);
              return <Post key={post.id} post={post} user={user} onUserClick={handleUserClick} />;
-          })
+          }) : (
+             <div className="text-center text-neutral-500 py-10">Waiting for backend posts...</div>
+          )
         )}
       </div>
     </div>
