@@ -7,34 +7,47 @@ import Input from '@/components/ui/Input';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { AlertCircle } from 'lucide-react'; // Added an icon for the error message!
 
 export default function SignupPage() {
   const router = useRouter();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<SignupFormValues>({
+  
+  // 1. Destructure setError from useForm
+  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<SignupFormValues>({
     resolver: zodResolver(SignupSchema),
   });
 
  const onSubmit = async (values: SignupFormValues) => {
   try {
-    // 1. Destructure to remove confirmPassword
-    // 'rest' will now contain only: name, username, email, password
     const { confirmPassword, ...dataToSubmit } = values;
 
-    // 2. Send only the clean data to your NestJS backend
     await api.auth.signup(dataToSubmit);
     
     router.push('/login'); 
-  } catch (error) {
-    console.error("Signup failed:", error);
-    // Optional: Add a toast or alert here to show the error to the user
+  } catch (error: any) {
+    // 2. Catch the error from NestJS and set it as a global form error
+    setError('root', {
+        type: 'server',
+        message: error.message || 'Something went wrong. Please try again.',
+    });
   }
 };
 
   return (
     <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/20 dark:border-neutral-800 rounded-[32px] p-8 shadow-2xl">
       <h2 className="text-2xl font-bold text-center mb-2 dark:text-white">Create an account</h2>
-      <p className="text-center text-neutral-500 mb-8 text-sm">Join the Luma community today</p>
+      <p className="text-center text-neutral-500 mb-8 text-sm">Join the Lumo community today</p>
       
+      {/* 3. Display the backend error message if it exists */}
+      {errors.root && (
+        <div className="mb-6 p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+            <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+            <p className="text-sm font-medium text-red-600 dark:text-red-400 leading-snug">
+                {errors.root.message}
+            </p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)}>
         <Input 
           label="Username" 
@@ -68,9 +81,14 @@ export default function SignupPage() {
         <button 
           type="submit" 
           disabled={isSubmitting}
-          className="w-full mt-4 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white font-bold py-3.5 rounded-xl hover:scale-[1.02] transition-transform shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full mt-4 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white font-bold py-3.5 rounded-xl hover:scale-[1.02] transition-transform shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {isSubmitting ? 'Creating account...' : 'Sign Up'}
+          {isSubmitting ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Creating account...
+              </>
+          ) : 'Sign Up'}
         </button>
       </form>
 
