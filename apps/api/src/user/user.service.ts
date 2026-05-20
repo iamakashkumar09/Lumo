@@ -40,23 +40,42 @@ export class UserService {
     }
 
     // we need to return the user without password as security concerns
-
     const {password, ...userwithoutPassword}=user;
-    return userwithoutPassword;
+    return this.addVirtualFields(userwithoutPassword as any);
+  }
+
+  private addVirtualFields(user: User): User {
+    if (!user) return user;
+    (user as any).stats = {
+      followersCount: 120,
+      followingCount: 95,
+      postsCount: 12,
+    };
+    (user as any).lastSeenAt = new Date().toISOString();
+    return user;
   }
 
   async findAll() {
-    return await this.userRepo.find();
+    const users = await this.userRepo.find();
+    return users.map(user => {
+      const { password, ...userWithoutPassword } = user;
+      return this.addVirtualFields(userWithoutPassword as any);
+    });
   }
 
   // Changed id to 'string' because you are using UUIDs
   async findOne(id: string) {
-    return await this.userRepo.findOneBy({ id });
+    const user = await this.userRepo.findOneBy({ id });
+    if (!user) return null;
+    return this.addVirtualFields(user);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
+    if (updateUserDto.password) {
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
     await this.userRepo.update(id, updateUserDto);
-    return `User #${id} updated successfully`;
+    return this.findOne(id);
   }
 
   async remove(id: string) {

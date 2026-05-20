@@ -10,7 +10,7 @@ async function bootstrap() {
     transform: true, // Automatically transforms payloads to be objects typed according to DTO classes
   }));
   app.enableCors({
-    origin: 'http://localhost:3000', // Your Next.js URL
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

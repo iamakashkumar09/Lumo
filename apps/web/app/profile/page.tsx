@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Settings, UserPlus, MessageCircle, ArrowLeft, Check, MoreHorizontal, X, Heart, Grid, LayoutList, Send, Bookmark, ChevronLeft, Loader2 } from 'lucide-react';
+import { Settings, UserPlus, MessageCircle, ArrowLeft, Check, MoreHorizontal, X, Heart, Grid, LayoutList, Send, Bookmark, ChevronLeft, Loader2, LogOut } from 'lucide-react';
 import { api } from '@/lib/api';
 import Avatar from '@/components/ui/Avatar';
 import Post from '@/components/feed/Post';
@@ -20,6 +20,13 @@ function ProfileContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
   const [isLoading, setIsLoading] = useState(true);
   
+  // Settings/Edit Profile State
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editAvatarUrl, setEditAvatarUrl] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
   // Modal State
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
   const [isLiked, setIsLiked] = useState(false);
@@ -72,14 +79,21 @@ function ProfileContent() {
     loadProfileData();
   }, [userId]);
 
+  // Sync edit profile form state
+  useEffect(() => {
+    if (user && isSettingsOpen) {
+      setEditName(user.name || '');
+      setEditBio(user.bio || '');
+      setEditAvatarUrl(user.avatarUrl || '');
+    }
+  }, [isSettingsOpen, user]);
+
   // Sync modal state when a post is opened
   useEffect(() => {
     if (selectedPost) {
         setIsLiked(selectedPost.likedByMe || false);
         setLikesCount(selectedPost.likesCount);
         setCommentText("");
-        // In future: Fetch real comments for this post
-        // api.posts.getComments(selectedPost.id).then(setComments);
     }
   }, [selectedPost]);
 
@@ -120,6 +134,24 @@ function ProfileContent() {
     }
   };
 
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const updatedUser = await api.users.updateCurrentUser({
+        name: editName,
+        bio: editBio,
+        avatarUrl: editAvatarUrl,
+      });
+      setUser(updatedUser);
+      setIsSettingsOpen(false);
+    } catch (err: any) {
+      alert(err.message || "Failed to save settings");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-neutral-400" size={40} /></div>;
   if (!user) return <div className="pt-40 text-center text-neutral-400">User not found.</div>;
 
@@ -128,7 +160,7 @@ function ProfileContent() {
       <div className="w-full max-w-3xl mx-auto pt-6 pb-32 px-4 animate-in fade-in zoom-in duration-300">
           
           {/* Header Card */}
-          <div className="bg-neutral-100 dark:bg-neutral-900 rounded-[32px] p-5 mb-5 relative overflow-hidden text-center shadow-sm">
+          <div className="bg-white/85 dark:bg-neutral-900/85 backdrop-blur-md border border-neutral-200/50 dark:border-neutral-800/50 rounded-[32px] p-6 mb-6 relative overflow-hidden text-center shadow-sm">
               <div className="absolute top-[-50%] left-1/2 -translate-x-1/2 w-96 h-96 bg-gradient-to-b from-purple-500/10 via-pink-500/5 to-transparent rounded-full blur-3xl pointer-events-none"></div>
               
               {!isOwnProfile && (
@@ -140,7 +172,10 @@ function ProfileContent() {
                   </button>
               )}
 
-              <button className="absolute top-4 right-4 p-2.5 rounded-full bg-white/60 dark:bg-black/30 hover:bg-white dark:hover:bg-black/50 transition-colors backdrop-blur-md z-20">
+              <button 
+                  onClick={() => isOwnProfile && setIsSettingsOpen(true)}
+                  className="absolute top-4 right-4 p-2.5 rounded-full bg-white/60 dark:bg-black/30 hover:bg-white dark:hover:bg-black/50 transition-colors backdrop-blur-md z-20"
+              >
                   {isOwnProfile ? <Settings size={20} className="text-neutral-700 dark:text-white" /> : <MoreHorizontal size={20} className="text-neutral-700 dark:text-white" />}
               </button>
 
@@ -168,7 +203,7 @@ function ProfileContent() {
 
               {/* Bio Info */}
               <div className="relative z-10 flex flex-col items-center max-w-md mx-auto">
-                  <h1 className="text-xl md:text-2xl font-bold dark:text-white mb-0.5">{user.name}</h1>
+                  <h1 className="text-xl md:text-2xl font-bold dark:text-white mb-0.5">{user.name || user.username}</h1>
                   <p className="text-neutral-500 dark:text-neutral-400 font-medium mb-3 text-sm">@{user.username}</p>
                   
                   {!isOwnProfile && (
@@ -219,7 +254,7 @@ function ProfileContent() {
                   {posts.map((post) => (
                       <div 
                         key={post.id} 
-                        className="break-inside-avoid rounded-2xl overflow-hidden relative group cursor-pointer bg-neutral-200 dark:bg-neutral-800"
+                        className="break-inside-avoid rounded-2xl overflow-hidden relative group cursor-pointer bg-neutral-200 dark:bg-neutral-800 border border-neutral-200/30 dark:border-neutral-700/30"
                         onClick={() => setSelectedPost(post)}
                       >
                           <img 
@@ -234,7 +269,7 @@ function ProfileContent() {
                           </div>
                       </div>
                   ))}
-                  {posts.length === 0 && <p className="text-center text-neutral-500 col-span-full py-10 font-medium">No posts to show.</p>}
+                  {posts.length === 0 && <p className="text-center text-neutral-500 col-span-full py-10 font-medium w-full">No posts to show.</p>}
               </div>
           ) : (
             <div className="flex flex-col gap-8">
@@ -303,6 +338,89 @@ function ProfileContent() {
                   <div className="pb-24">
                       <Post post={selectedPost} user={user} onUserClick={handleUserClick} />
                   </div>
+              </div>
+          </div>
+      )}
+
+      {/* Settings / Edit Profile Modal */}
+      {isSettingsOpen && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+            onClick={() => setIsSettingsOpen(false)}
+          >
+              <div 
+                className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-[32px] overflow-hidden shadow-2xl border border-neutral-200/50 dark:border-neutral-800/50 p-6 flex flex-col gap-6"
+                onClick={(e) => e.stopPropagation()}
+              >
+                  <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
+                      <h2 className="text-xl font-bold dark:text-white">Settings</h2>
+                      <button 
+                          onClick={() => setIsSettingsOpen(false)} 
+                          className="p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                      >
+                          <X size={20} className="text-neutral-500" />
+                      </button>
+                  </div>
+
+                  {/* Form */}
+                  <form onSubmit={handleSaveSettings} className="space-y-4">
+                      <div>
+                          <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5 pl-1">Display Name</label>
+                          <input 
+                              type="text" 
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              placeholder="Your full name"
+                              className="w-full px-4 py-3 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-sm outline-none focus:border-purple-500 dark:text-white transition-colors"
+                          />
+                      </div>
+
+                      <div>
+                          <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5 pl-1">Bio</label>
+                          <textarea 
+                              value={editBio}
+                              onChange={(e) => setEditBio(e.target.value)}
+                              placeholder="Tell the world your vibe..."
+                              rows={3}
+                              className="w-full px-4 py-3 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-sm outline-none focus:border-purple-500 dark:text-white transition-colors resize-none"
+                          />
+                      </div>
+
+                      <div>
+                          <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5 pl-1">Avatar Image URL</label>
+                          <input 
+                              type="text" 
+                              value={editAvatarUrl}
+                              onChange={(e) => setEditAvatarUrl(e.target.value)}
+                              placeholder="https://example.com/avatar.jpg"
+                              className="w-full px-4 py-3 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-sm outline-none focus:border-purple-500 dark:text-white transition-colors"
+                          />
+                      </div>
+
+                      <div className="pt-2">
+                          <button 
+                              type="submit"
+                              disabled={isSaving}
+                              className="w-full py-3.5 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-2xl font-bold text-sm hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2 shadow-lg"
+                          >
+                              {isSaving && <Loader2 className="animate-spin" size={16} />}
+                              <span>Save Settings</span>
+                          </button>
+                      </div>
+                  </form>
+
+                  <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-1"></div>
+
+                  <button 
+                      onClick={() => {
+                          api.auth.logout();
+                          router.push('/login');
+                      }}
+                      className="w-full py-3.5 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/40 text-red-600 rounded-2xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                  >
+                      <LogOut size={16} />
+                      <span>Log Out</span>
+                  </button>
               </div>
           </div>
       )}

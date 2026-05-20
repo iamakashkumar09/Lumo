@@ -56,6 +56,11 @@ export const api = {
         console.error("Signup Error:", error.message);
         throw error;
       }
+    },
+    logout: () => {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
     }
   },
 
@@ -190,6 +195,21 @@ export const api = {
       } catch (error) {
         return null;
       }
+    },
+
+    updateCurrentUser: async (data: Partial<User>): Promise<User> => {
+      const res = await fetch(`${API_URL}/users/me`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to update profile');
+      }
+
+      return await res.json();
     },
   }
 };

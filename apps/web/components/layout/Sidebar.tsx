@@ -1,14 +1,17 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Search, MessageCircle, Heart, PlusSquare, User, Share2 } from 'lucide-react';
+import { Home, Search, MessageCircle, Heart, PlusSquare, User, Share2, LogOut, Settings } from 'lucide-react';
 import { useState } from 'react';
 import CreatePostModal from '@/components/shared/CreatePostModal';
+import { api } from '@/lib/api';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   if (pathname.includes('/login') || pathname.includes('/signup')) return null;
   
@@ -17,7 +20,7 @@ export default function Sidebar() {
     const Component = href ? Link : 'button';
     
     return (
-      <Component href={href || undefined} onClick={onClick} className="block w-full">
+      <Component href={href || undefined} onClick={onClick} className="block w-full text-left">
         <div className={`relative flex items-center gap-4 p-3 xl:px-5 rounded-[20px] transition-all duration-300 group ${isActive ? 'bg-neutral-900 dark:bg-white text-white dark:text-black shadow-lg' : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-900/50 dark:hover:text-white'}`}>
             <Icon size={26} strokeWidth={isActive ? 2.5 : 2} className="relative z-10 flex-shrink-0" />
             <span className={`text-base font-bold hidden xl:block ${isActive ? '' : 'font-medium'}`}>
@@ -45,8 +48,37 @@ export default function Sidebar() {
             <NavIcon icon={User} label="Profile" href="/profile" />
          </div>
          
-         <div className="mt-auto">
-             <button className="w-full p-3 xl:px-5 rounded-[20px] flex items-center gap-4 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-900/50 transition-colors">
+         <div className="mt-auto relative">
+             {isMoreOpen && (
+                 <div className="absolute bottom-16 left-0 w-56 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-2 shadow-xl animate-in slide-in-from-bottom-2 duration-200 z-50">
+                     <button 
+                         onClick={() => {
+                             setIsMoreOpen(false);
+                             router.push('/profile');
+                         }}
+                         className="w-full flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left"
+                     >
+                         <Settings size={18} />
+                         <span>Settings</span>
+                     </button>
+                     <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-1"></div>
+                     <button 
+                         onClick={() => {
+                             setIsMoreOpen(false);
+                             api.auth.logout();
+                             router.push('/login');
+                         }}
+                         className="w-full flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-left"
+                     >
+                         <LogOut size={18} />
+                         <span>Log Out</span>
+                     </button>
+                 </div>
+             )}
+             <button 
+                 onClick={() => setIsMoreOpen(!isMoreOpen)}
+                 className={`w-full p-3 xl:px-5 rounded-[20px] flex items-center gap-4 transition-all duration-300 ${isMoreOpen ? 'bg-neutral-100 dark:bg-neutral-900/50 text-black dark:text-white' : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-900/50'}`}
+             >
                  <Share2 size={26} />
                  <span className="hidden xl:block font-medium">More</span>
              </button>

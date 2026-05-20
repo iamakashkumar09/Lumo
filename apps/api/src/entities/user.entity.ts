@@ -5,8 +5,8 @@ export class User {
     @PrimaryGeneratedColumn('uuid') // Tell TypeORM to generate UUIDs automatically
     id: string; // Use 'string' as the TypeScript type for UUIDs
 
-    // @Column()
-    // name: string;
+    @Column({ nullable: true })
+    name: string;
 
     @Column({ unique: true }) // Usernames should usually be unique
     username: string;
@@ -16,6 +16,12 @@ export class User {
 
     @Column()
     password: string;
+
+    @Column({ nullable: true })
+    bio: string;
+
+    @Column({ nullable: true, name: 'avatar_url' })
+    avatarUrl: string;
 
     @BeforeInsert()
     async hashPassword(){
